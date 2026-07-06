@@ -5,6 +5,21 @@ import { LearningEntry, hasSupabaseConfig, supabase } from "@/lib/supabase";
 
 const tools = ["GitHub", "Vercel", "Supabase", "Next.js", "Other"];
 
+function formatEntryDate(value: string) {
+  const hasTimezone = /(?:z|[+-]\d{2}:\d{2})$/i.test(value);
+  const date = new Date(hasTimezone ? value : `${value}Z`);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "numeric",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
 export default function Home() {
   const [entries, setEntries] = useState<LearningEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,17 +79,27 @@ export default function Home() {
     }
 
     setSaving(true);
-    const { error } = await supabase.from("learning_entries").insert(entry);
 
-    if (error) {
-      setMessage(error.message);
-    } else {
-      event.currentTarget.reset();
-      setMessage("Entry saved.");
-      await loadEntries();
+    try {
+      const { data, error } = await supabase
+        .from("learning_entries")
+        .insert(entry)
+        .select("id, created_at, title, tool, note, next_step")
+        .single();
+
+      if (error) {
+        setMessage(error.message);
+      } else {
+        event.currentTarget.reset();
+        setEntries((currentEntries) =>
+          data ? [data, ...currentEntries] : currentEntries,
+        );
+        setMessage("Entry saved.");
+        void loadEntries();
+      }
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
   }
 
   return (
@@ -139,7 +164,7 @@ export default function Home() {
               <article className="entry" key={entry.id}>
                 <h3>{entry.title}</h3>
                 <p className="entry-meta">
-                  {entry.tool} · {new Date(entry.created_at).toLocaleDateString()}
+                  {entry.tool} · {formatEntryDate(entry.created_at)}
                 </p>
                 <p>{entry.note}</p>
                 {entry.next_step ? (
