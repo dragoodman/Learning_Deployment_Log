@@ -2,16 +2,20 @@
 
 A small Next.js app for recording hands-on learning milestones while practicing GitHub, Vercel, and Supabase deployment.
 
-## Version 1
+## Learning Scope
+
+This project is primarily a workflow-learning project, not a production application. Version 2 completion is defined in `Version_2_Goals_and_Completion_Criteria.md`.
+
+Success is measured by Allan's understanding of the development lifecycle: local development, Git, GitHub, Supabase, Vercel deployment, redeployment, and Codex collaboration.
+
+## Current App Behavior
 
 - Add a learning entry.
 - View saved learning entries.
 - Deploy through GitHub and Vercel.
-
-## Version 2
-
 - Delete a saved learning entry.
-- Keep deployment notes in the project README.
+
+The delete feature exists as a simple practice feature, but it is not required for Version 2 completion.
 
 ## Deployment Notes
 
