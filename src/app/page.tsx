@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { LearningEntry, hasSupabaseConfig, supabase } from "@/lib/supabase";
 
 const tools = ["GitHub", "Vercel", "Supabase", "Next.js", "Other"];
+const saveTimeoutMs = 8000;
 
 function formatEntryDate(value: string) {
   const hasTimezone = /(?:z|[+-]\d{2}:\d{2})$/i.test(value);
@@ -66,7 +67,10 @@ export default function Home() {
     }
 
     const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const submittedAt = new Date().toISOString();
     const entry = {
+      created_at: submittedAt,
       title: String(formData.get("title") ?? "").trim(),
       tool: String(formData.get("tool") ?? "").trim(),
       note: String(formData.get("note") ?? "").trim(),
@@ -81,22 +85,39 @@ export default function Home() {
     setSaving(true);
 
     try {
-      const { data, error } = await supabase
-        .from("learning_entries")
-        .insert(entry)
-        .select("id, created_at, title, tool, note, next_step")
-        .single();
+      const saveRequest = supabase.from("learning_entries").insert(entry);
+      const timeout = new Promise<"timeout">((resolve) => {
+        window.setTimeout(() => resolve("timeout"), saveTimeoutMs);
+      });
+      const result = await Promise.race([saveRequest, timeout]);
 
-      if (error) {
-        setMessage(error.message);
-      } else {
-        event.currentTarget.reset();
-        setEntries((currentEntries) =>
-          data ? [data, ...currentEntries] : currentEntries,
+      if (result === "timeout") {
+        form.reset();
+        setMessage(
+          "Save is taking longer than expected. Refresh to confirm it saved.",
         );
+        void loadEntries();
+        return;
+      }
+
+      if (result.error) {
+        setMessage(result.error.message);
+      } else {
+        const optimisticEntry: LearningEntry = {
+          id:
+            typeof crypto !== "undefined" && "randomUUID" in crypto
+              ? crypto.randomUUID()
+              : `saved-${Date.now()}`,
+          ...entry,
+        };
+
+        form.reset();
+        setEntries((currentEntries) => [optimisticEntry, ...currentEntries]);
         setMessage("Entry saved.");
         void loadEntries();
       }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not save entry.");
     } finally {
       setSaving(false);
     }
