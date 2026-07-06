@@ -139,9 +139,37 @@ select {
   background: #fff;
 }
 
+.entry-header {
+  display: flex;
+  gap: 12px;
+  align-items: start;
+  justify-content: space-between;
+}
+
 .entry h3 {
   margin: 0 0 8px;
   font-size: 1.05rem;
+}
+
+.delete-button {
+  flex: 0 0 auto;
+  border: 1px solid #f0b4a8;
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #b42318;
+  background: #fff7f5;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.delete-button:hover {
+  border-color: #d92d20;
+}
+
+.delete-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .entry-meta {
@@ -167,5 +195,14 @@ select {
 
   .layout {
     grid-template-columns: 1fr;
+  }
+
+  .entry-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .delete-button {
+    width: fit-content;
   }
 }

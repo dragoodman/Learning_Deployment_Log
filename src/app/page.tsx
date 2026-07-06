@@ -25,6 +25,7 @@ export default function Home() {
   const [entries, setEntries] = useState<LearningEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
   const loadEntries = useCallback(async () => {
@@ -123,6 +124,38 @@ export default function Home() {
     }
   }
 
+  async function deleteEntry(entry: LearningEntry) {
+    if (!supabase) {
+      setMessage("Supabase is not connected yet.");
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete "${entry.title}"?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingId(entry.id);
+    setMessage("");
+
+    const { error } = await supabase
+      .from("learning_entries")
+      .delete()
+      .eq("id", entry.id);
+
+    if (error) {
+      setMessage(error.message);
+    } else {
+      setEntries((currentEntries) =>
+        currentEntries.filter((currentEntry) => currentEntry.id !== entry.id),
+      );
+      setMessage("Entry deleted.");
+    }
+
+    setDeletingId(null);
+  }
+
   return (
     <main className="page">
       <section className="header">
@@ -183,7 +216,17 @@ export default function Home() {
           <div className="entry-list">
             {entries.map((entry) => (
               <article className="entry" key={entry.id}>
-                <h3>{entry.title}</h3>
+                <div className="entry-header">
+                  <h3>{entry.title}</h3>
+                  <button
+                    className="delete-button"
+                    type="button"
+                    onClick={() => deleteEntry(entry)}
+                    disabled={deletingId === entry.id}
+                  >
+                    {deletingId === entry.id ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
                 <p className="entry-meta">
                   {entry.tool} · {formatEntryDate(entry.created_at)}
                 </p>
